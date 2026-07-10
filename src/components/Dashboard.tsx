@@ -2,6 +2,13 @@ import React, { useState } from "react";
 import { AppState, Property, PropertyExpense, getThemeColors } from "../types";
 import { getApiUrl } from "../lib/firebase";
 import { 
+  extractInvoice, 
+  extractDocuments, 
+  isStaticDeployment, 
+  getLocalApiKey, 
+  setLocalApiKey 
+} from "../lib/geminiService";
+import { 
   Building, 
   Briefcase, 
   TrendingUp, 
@@ -216,25 +223,19 @@ export default function Dashboard({
 
           setScanStatusMsg("Enviando a la red neuronal de Gemini 3.5 Flash...");
           
-          const response = await fetch(getApiUrl("/api/extract-invoice"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fileData: rawBase64, mimeType })
-          });
-
-          if (!response.ok) {
-            const errRes = await response.json();
-            throw new Error(errRes.error || "Fallo en la extracción de datos.");
-          }
+          const result = await extractInvoice({ fileData: rawBase64, mimeType });
 
           setScanStatusMsg("Leyendo base imponible, fecha y NIF fiscal...");
-          const result = await response.json();
           
           setExtractedResult(result);
           setScanning(false);
         } catch (e: any) {
           console.error(e);
-          setScanError(e.message || "No se pudo interpretar el comprobante. Inténtalo de nuevo.");
+          if (e.message === "API_KEY_REQUIRED") {
+            setScanError("API_KEY_REQUIRED");
+          } else {
+            setScanError(e.message || "No se pudo interpretar el comprobante. Inténtalo de nuevo.");
+          }
           setScanning(false);
         }
       };
@@ -634,7 +635,43 @@ export default function Dashboard({
                 </div>
               )}
 
-              {yearError && (
+              {yearError && yearError === "API_KEY_REQUIRED" ? (
+                <div className="p-4 bg-indigo-950/40 border border-indigo-500/40 text-xs text-slate-300 rounded-xl space-y-2 text-left">
+                  <div className="flex items-center space-x-2 text-white font-bold">
+                    <Sparkles className="w-4 h-4 text-indigo-400" />
+                    <span>Se requiere clave API de Gemini</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Estás ejecutando la aplicación desde GitHub Pages. Para procesar declaraciones de renta de forma local y privada en tu navegador, introduce tu clave API de Gemini:
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="password"
+                      placeholder="Tu clave API de Gemini..."
+                      id="annual-gemini-key"
+                      defaultValue={getLocalApiKey() || ""}
+                      className="flex-1 bg-slate-900 border border-slate-700/60 rounded-lg px-2.5 py-1 text-[11px] text-white font-mono focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const val = (document.getElementById("annual-gemini-key") as HTMLInputElement)?.value;
+                        if (val) {
+                          setLocalApiKey(val);
+                          setYearError(null);
+                        }
+                      }}
+                      className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-semibold"
+                    >
+                      Guardar
+                    </button>
+                  </div>
+                  <div className="flex justify-between text-[10px] text-slate-500 pt-1">
+                    <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">Obtener gratis en Google AI Studio ↗</a>
+                    <button type="button" onClick={() => setYearError(null)} className="underline text-slate-500 hover:text-slate-450">Cancelar</button>
+                  </div>
+                </div>
+              ) : yearError && (
                 <div className="p-3 bg-red-950/30 border border-red-500/35 text-red-300 text-xs rounded-xl flex items-center space-x-2">
                   <AlertCircle className="w-4 h-4 text-red-400" />
                   <span>{yearError}</span>
@@ -768,13 +805,7 @@ ${user2.hasPartner ? `Cónyuge: ${user2.name || "Usuario 2"} - DNI: ${user2.dni 
                             bodyPayload.text1 = yearPastedText;
                           }
 
-                          const response = await fetch(getApiUrl("/api/extract"), {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(bodyPayload),
-                          });
-                          if (!response.ok) throw new Error("Fallo en la extracción");
-                          const res = await response.json();
+                          const res = await extractDocuments(bodyPayload);
                           
                           const isConjunta = yearIntegrationMode === "conjunta";
                           const isUser1 = yearIntegrationMode === "user1";
@@ -797,21 +828,24 @@ ${user2.hasPartner ? `Cónyuge: ${user2.name || "Usuario 2"} - DNI: ${user2.dni 
                           setShowYearUpload(false);
                           setYearUploadedFile(null);
                         } catch (err: any) {
-                          setYearError("No se pudo conectar con el servidor de extracción. Se han aplicado valores estimados basados en el archivo o texto.");
-                          
-                          let sampleText = yearPastedText;
-                          if (yearUploadedFile) {
-                            sampleText = `Borrador Declaración Ejercicio ${activeYear}
-Declarante: ${user1.name || "Usuario 1"}
-Rendimientos del trabajo bruto: ${Math.round(user1.brutoTrabajo * 1.05)}
-Rendimientos neto trabajo: ${Math.round(user1.netoTrabajo * 1.05)}`;
-                          }
+                          if (err.message === "API_KEY_REQUIRED") {
+                            setYearError("API_KEY_REQUIRED");
+                          } else {
+                            setYearError("No se pudo conectar con el servidor de extracción. Se han aplicado valores estimados basados en el archivo o texto.");
+                            
+                            let sampleText = yearPastedText;
+                            if (yearUploadedFile) {
+                              sampleText = `Borrador Declaración Ejercicio ${activeYear}
+  Declarante: ${user1.name || "Usuario 1"}
+  Rendimientos del trabajo bruto: ${Math.round(user1.brutoTrabajo * 1.05)}
+  Rendimientos neto trabajo: ${Math.round(user1.netoTrabajo * 1.05)}`;
+                            }
 
-                          const brutoMatch1 = sampleText.match(/bruto:?\s*(\d+)/i) || sampleText.match(/trabajo bruto:?\s*(\d+)/i);
-                          const netoMatch1 = sampleText.match(/neto\s*trabajo:?\s*(\d+)/i) || sampleText.match(/neto:?\s*(\d+)/i);
-                          
-                          const u1B = brutoMatch1 ? Number(brutoMatch1[1]) : Math.round(user1.brutoTrabajo * 1.05);
-                          const u1N = netoMatch1 ? Number(netoMatch1[1]) : Math.round(user1.netoTrabajo * 1.05);
+                            const brutoMatch1 = sampleText.match(/bruto:?\s*(\d+)/i) || sampleText.match(/trabajo bruto:?\s*(\d+)/i);
+                            const netoMatch1 = sampleText.match(/neto\s*trabajo:?\s*(\d+)/i) || sampleText.match(/neto:?\s*(\d+)/i);
+                            
+                            const u1B = brutoMatch1 ? Number(brutoMatch1[1]) : Math.round(user1.brutoTrabajo * 1.05);
+                            const u1N = netoMatch1 ? Number(netoMatch1[1]) : Math.round(user1.netoTrabajo * 1.05);
 
                           const brutoMatch2 = sampleText.match(/cónyuge bruto:?\s*(\d+)/i) || sampleText.match(/cónyuge\s*bruto:?\s*(\d+)/i);
                           const netoMatch2 = sampleText.match(/cónyuge neto:?\s*(\d+)/i) || sampleText.match(/cónyuge\s*neto:?\s*(\d+)/i);
@@ -831,10 +865,11 @@ Rendimientos neto trabajo: ${Math.round(user1.netoTrabajo * 1.05)}`;
                           setYearSuccess(true);
                           setTimeout(() => setShowYearUpload(false), 1500);
                           setYearUploadedFile(null);
-                        } finally {
-                          setYearExtracting(false);
                         }
-                      }}
+                      } finally {
+                        setYearExtracting(false);
+                      }
+                    }}
                       className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
                     >
                       {yearExtracting ? (
@@ -1438,14 +1473,54 @@ Rendimientos neto trabajo: ${Math.round(user1.netoTrabajo * 1.05)}`;
                   </button>
                 </div>
               </div>
+            ) : scanError && scanError === "API_KEY_REQUIRED" ? (
+              <div className="flex flex-col justify-center text-left space-y-3 p-4 bg-indigo-950/30 border border-indigo-500/30 rounded-xl h-full animate-slide-in">
+                <div className="flex items-center space-x-2 text-white font-bold text-xs">
+                  <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
+                  <span>Configuración de IA Necesaria</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                  Para digitalizar recibos desde GitHub Pages sin un backend Express, es necesario proporcionar una clave de API de Gemini. Se guarda de forma segura en tu propio navegador.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    placeholder="Clave API de Gemini..."
+                    id="scan-gemini-key"
+                    defaultValue={getLocalApiKey() || ""}
+                    className="flex-1 bg-slate-900 border border-slate-700/60 rounded-lg px-2.5 py-1 text-[11px] text-white font-mono focus:outline-none focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = (document.getElementById("scan-gemini-key") as HTMLInputElement)?.value;
+                      if (val) {
+                        setLocalApiKey(val);
+                        setScanError(null);
+                        if (scannedFile) {
+                          handleFileScan(scannedFile);
+                        }
+                      }
+                    }}
+                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-semibold shrink-0 cursor-pointer"
+                  >
+                    Guardar
+                  </button>
+                </div>
+                <div className="flex justify-between items-center text-[10px] text-slate-500 pt-1">
+                  <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline font-semibold">Obtener clave gratis ↗</a>
+                  <button type="button" onClick={() => { setScanError(null); setScannedFile(null); }} className="hover:text-slate-400 underline">Descartar</button>
+                </div>
+              </div>
             ) : scanError ? (
               <div className="flex flex-col items-center justify-center text-center space-y-2 py-8 h-full">
                 <AlertCircle className="w-8 h-8 text-rose-500" />
                 <p className="text-xs font-bold text-white">Fallo al escanear comprobante</p>
                 <p className="text-[10px] text-slate-400 max-w-[280px]">{scanError}</p>
                 <button
+                  type="button"
                   onClick={() => { setScanError(null); setScannedFile(null); }}
-                  className={`text-indigo-400 hover:opacity-80 underline font-bold text-[10px]`}
+                  className={`text-indigo-400 hover:opacity-80 underline font-bold text-[10px] cursor-pointer`}
                 >
                   Intentar de nuevo
                 </button>
