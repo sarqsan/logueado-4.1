@@ -3,8 +3,8 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(() => {
-  const isProd = process.env.NODE_ENV === 'production';
+export default defineConfig(({ command, mode }) => {
+  const isProd = mode === 'production' || command === 'build';
   return {
     base: isProd ? '/logueado-4.1/' : '/',
     plugins: [react(), tailwindcss()],
