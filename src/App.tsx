@@ -9,6 +9,7 @@ import AuthScreen from "./components/AuthScreen";
 import Expenses from "./components/Expenses";
 import ContractCreator from "./components/ContractCreator";
 import { AppState, Property, RentPayment, SyncEvent, PropertyExpense, getThemeColors } from "./types";
+import { syncStateToFirebase, loadStateFromFirebase } from "./lib/firebase";
 import { 
   Menu, 
   ChevronDown, 
@@ -23,7 +24,8 @@ import {
   Bell,
   Trash2,
   Receipt,
-  FileText
+  FileText,
+  Cloud
 } from "lucide-react";
 
 // Standard Spanish lease months
@@ -72,18 +74,46 @@ export default function App() {
         const session = JSON.parse(sessionStr);
         if (session.isAuthenticated && session.currentUser) {
           const userStateStr = localStorage.getItem(`rentasync_state_${session.currentUser}`);
+          let initialLocalState: AppState | null = null;
           if (userStateStr) {
-            const parsed = JSON.parse(userStateStr);
-            setState({
-              currentYear: 2026,
-              yearlyProfiles: {},
-              ...parsed,
-              isAuthenticated: true,
-              currentUser: session.currentUser,
-              registeredUsers
-            });
-            return;
+            try {
+              initialLocalState = JSON.parse(userStateStr);
+            } catch (e) {
+              console.error(e);
+            }
           }
+
+          const baseStateToLoad = {
+            user1: { name: "", dni: "", brutoTrabajo: 0, netoTrabajo: 0 },
+            user2: { name: "", dni: "", brutoTrabajo: 0, netoTrabajo: 0, hasPartner: false },
+            properties: [],
+            payments: [],
+            expenses: [],
+            syncEvents: [],
+            syncEnabled: true,
+            isOnboarded: false,
+            currentYear: 2026,
+            yearlyProfiles: {},
+            theme: "slate-indigo",
+            ...initialLocalState,
+            isAuthenticated: true,
+            currentUser: session.currentUser,
+            registeredUsers
+          };
+
+          setState(baseStateToLoad);
+
+          // Silent background load from Firebase Cloud
+          loadStateFromFirebase(baseStateToLoad).then((cloudState) => {
+            if (cloudState) {
+              setState(cloudState);
+              localStorage.setItem(`rentasync_state_${session.currentUser}`, JSON.stringify(cloudState));
+            }
+          }).catch((err) => {
+            console.error("Error cargando de Firebase en inicio:", err);
+          });
+
+          return;
         }
       } catch (e) {
         console.error("Error restoring session:", e);
@@ -95,6 +125,31 @@ export default function App() {
       registeredUsers
     }));
   }, []);
+
+  // Debounced real-time cloud synchronization to Firebase
+  useEffect(() => {
+    // Only sync if there is some meaningful user state (onboarded or properties registered)
+    if (!state.isOnboarded && state.properties.length === 0) return;
+
+    const syncTimer = setTimeout(() => {
+      syncStateToFirebase(state).catch((err) => {
+        console.error("Error en sincronización en la nube:", err);
+      });
+    }, 1500); // 1.5 seconds debounce to group rapid client operations
+
+    return () => clearTimeout(syncTimer);
+  }, [
+    state.properties,
+    state.payments,
+    state.expenses,
+    state.user1,
+    state.user2,
+    state.theme,
+    state.currentYear,
+    state.isOnboarded,
+    state.currentUser,
+    state.isAuthenticated
+  ]);
 
   // Save to LocalStorage and handle automated sync events
   const updateState = (updater: (prev: AppState) => AppState) => {
@@ -622,10 +677,28 @@ export default function App() {
       };
     }
     
-    // 3. Update state
+    // 3. Update state locally first for zero-latency UI response
     setState(loadedState);
     localStorage.setItem("rentasync_session", JSON.stringify({ currentUser: username, isAuthenticated: true }));
-    triggerNotification(`🔑 ¡Sesión iniciada como ${username}!`);
+    triggerNotification(`🔑 Sesión iniciada como ${username}. Sincronizando nube...`);
+
+    // 4. Background cloud sync fetch
+    loadStateFromFirebase({
+      ...loadedState,
+      currentUser: username,
+      isAuthenticated: true
+    }).then((cloudState) => {
+      if (cloudState) {
+        setState(cloudState);
+        localStorage.setItem(`rentasync_state_${username}`, JSON.stringify(cloudState));
+        triggerNotification(`☁️ ¡Datos restaurados con éxito de Firebase!`);
+      } else {
+        // First-time login or no cloud state yet - push local state to cloud
+        syncStateToFirebase(loadedState).catch(console.error);
+      }
+    }).catch((err) => {
+      console.error("Error cargando de Firebase en login:", err);
+    });
   };
 
   const handleRegisterSuccess = (updatedRegisteredUsers: Record<string, string>) => {
@@ -720,7 +793,13 @@ export default function App() {
           </div>
           <div>
             <span className={`text-[10px] uppercase font-mono tracking-wider font-extrabold ${themeColors.primaryText} block leading-tight`}>Agencia Inteligente</span>
-            <h1 className="text-sm font-black text-white tracking-tight">RentaSync</h1>
+            <h1 className="text-sm font-black text-white tracking-tight flex items-center gap-2">
+              <span>RentaSync</span>
+              <span className="hidden sm:inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded text-[10px] font-medium font-sans">
+                <Cloud className="w-3 h-3" />
+                <span>Nube Activa</span>
+              </span>
+            </h1>
           </div>
         </div>
 

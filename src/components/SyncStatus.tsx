@@ -7,7 +7,9 @@ import {
   CheckCircle, 
   Clock,
   Settings,
-  XCircle
+  XCircle,
+  Cloud,
+  Server
 } from "lucide-react";
 
 interface SyncStatusProps {
@@ -32,40 +34,80 @@ export default function SyncStatus({ state, onToggleSync, onClearLog }: SyncStat
         </div>
       </div>
 
-      {/* SYNC CONFIG STATUS CARD */}
-      <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 gap-6">
-        <div className="flex items-center space-x-4">
-          <div className={`p-3 rounded-xl ${
-            syncEnabled ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
-          }`}>
-            {syncEnabled ? <RefreshCw className="w-6 h-6 animate-spin" style={{ animationDuration: '4s' }} /> : <XCircle className="w-6 h-6" />}
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h3 className="font-bold text-white text-md">Sincronizador Multimódulo</h3>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono ${
-                syncEnabled ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
-              }`}>
-                {syncEnabled ? "Activo" : "Pausado"}
-              </span>
+      {/* SYNC CONFIG STATUS CARDS GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* LOCAL MULTI-MODULE SYNC CARD */}
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 shadow-lg flex flex-col justify-between space-y-6">
+          <div className="flex items-start space-x-4">
+            <div className={`p-3 rounded-xl shrink-0 ${
+              syncEnabled ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
+            }`}>
+              {syncEnabled ? <RefreshCw className="w-6 h-6 animate-spin" style={{ animationDuration: '4s' }} /> : <XCircle className="w-6 h-6" />}
             </div>
-            <p className="text-xs text-slate-400 mt-0.5 leading-normal">
-              Cuando está activo, cualquier edición en un inmueble o registro de cobro recalcula el IRPF, actualiza los ratios de rendimiento en el Dashboard y refresca las amortizaciones del usuario.
-            </p>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="font-bold text-white text-md">Sincronizador Multimódulo</h3>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono ${
+                  syncEnabled ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
+                }`}>
+                  {syncEnabled ? "Activo" : "Pausado"}
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                Cuando está activo, cualquier edición en un inmueble o registro de cobro recalcula el IRPF, actualiza los ratios de rendimiento en el Dashboard y refresca las amortizaciones del usuario.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onToggleSync}
+            className={`w-full px-5 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
+              syncEnabled 
+                ? "bg-red-950/40 hover:bg-red-900/30 text-red-300 border border-red-500/20" 
+                : "bg-emerald-950/40 hover:bg-emerald-900/30 text-emerald-300 border border-emerald-500/20"
+            }`}
+          >
+            {syncEnabled ? "Desactivar Sincronización" : "Activar Sincronización"}
+          </button>
+        </div>
+
+        {/* FIREBASE CLOUD SYNC CARD */}
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 shadow-lg flex flex-col justify-between space-y-6">
+          <div className="flex items-start space-x-4">
+            <div className="p-3 rounded-xl shrink-0 bg-indigo-500/20 text-indigo-400">
+              <Cloud className="w-6 h-6 animate-pulse" style={{ animationDuration: '3s' }} />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="font-bold text-white text-md">Respaldo en Nube Firebase</h3>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                  Sincronizado
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                Toda la información introducida en la aplicación (cartera de inmuebles, estado de cobros, gastos deducibles y documentos subidos) se guarda de forma segura en Firestore Cloud.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3 bg-slate-900/40 border border-slate-800 rounded-xl space-y-1.5 text-[11px] font-mono">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Proveedor Cloud DB:</span>
+              <span className="text-indigo-400">Google Firestore</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Proyecto Cloud ID:</span>
+              <span className="text-slate-300">startup-sanctuary-sln7n</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Frecuencia de Guardado:</span>
+              <span className="text-emerald-400 font-bold">En tiempo real (Debounced 1.5s)</span>
+            </div>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onToggleSync}
-          className={`px-5 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all shrink-0 ${
-            syncEnabled 
-              ? "bg-red-950/40 hover:bg-red-900/30 text-red-300 border border-red-500/20" 
-              : "bg-emerald-950/40 hover:bg-emerald-900/30 text-emerald-300 border border-emerald-500/20"
-          }`}
-        >
-          {syncEnabled ? "Desactivar Sincronización Automática" : "Activar Sincronización Automática"}
-        </button>
       </div>
 
       {/* SYNC EVENTS AUDIT LOG */}
