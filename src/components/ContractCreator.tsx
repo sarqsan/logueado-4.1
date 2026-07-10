@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AppState, Property } from "../types";
+import { getApiUrl } from "../lib/firebase";
 import { 
   FileText, 
   Download, 
@@ -318,7 +319,7 @@ D./Dña. ${landlordName || "..."}                  D./Dña. ${tenantName || "...
       `;
 
       // Call the server API proxy for Gemini model generateContent
-      const response = await fetch("/api/optimize-contract", {
+      const response = await fetch(getApiUrl("/api/optimize-contract"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

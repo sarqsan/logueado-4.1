@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { SAMPLE_DECLARATIONS } from "../data/samples";
 import { AppState } from "../types";
+import { getApiUrl } from "../lib/firebase";
 import { 
   FileText, 
   Sparkles, 
@@ -246,7 +247,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         propertiesFileName: uploadedPropertiesFile ? uploadedPropertiesFile.name : undefined,
       };
 
-      const response = await fetch("/api/extract", {
+      const response = await fetch(getApiUrl("/api/extract"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

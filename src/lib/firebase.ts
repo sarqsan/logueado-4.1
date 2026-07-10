@@ -176,3 +176,23 @@ export async function loadStateFromFirebase(state: AppState): Promise<AppState |
     return null;
   }
 }
+
+/**
+ * Utility to get the correct API endpoint, routing to Cloud Run backend
+ * when the app is running on GitHub Pages or other external static hosting.
+ */
+export function getApiUrl(path: string): string {
+  const hostname = window.location.hostname;
+  if (
+    hostname.includes("github.io") || 
+    hostname.includes("vercel.app") || 
+    hostname.includes("pages.dev") || 
+    hostname.includes("netlify.app")
+  ) {
+    const backendBase = "https://ais-pre-cou4hef2wa6lyapbvmyaqy-188021975467.europe-west1.run.app";
+    // Strip leading slash if any
+    const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+    return `${backendBase}/${cleanPath}`;
+  }
+  return path;
+}
