@@ -928,67 +928,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               </div>
             </div>
 
-            {error && error === "API_KEY_REQUIRED" ? (
-              <div className="bg-indigo-950/40 border border-indigo-500/40 rounded-2xl p-6 text-left space-y-4 animate-slide-in">
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg">
-                    <Sparkles className="w-5 h-5 animate-pulse" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Configuración del motor de Inteligencia Artificial</h4>
-                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                      Estás utilizando la aplicación desde un entorno estático (como **GitHub Pages**). Para ejecutar el análisis automático de documentos e inmuebles directamente en tu navegador, por favor proporciona una **clave de API de Gemini**.
-                    </p>
-                    <p className="text-[10px] text-slate-500 mt-1 leading-normal">
-                      Tu clave se almacena exclusivamente en tu navegador de forma 100% segura y privada (no se envía a ningún servidor intermediario).
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="pt-2 border-t border-slate-800 space-y-3">
-                  <div className="flex flex-col sm:flex-row gap-2.5">
-                    <input
-                      type="password"
-                      placeholder="Introduce tu clave API de Gemini..."
-                      id="onboarding-gemini-key"
-                      defaultValue={getLocalApiKey() || ""}
-                      className="flex-1 bg-slate-900 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/80"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const input = document.getElementById("onboarding-gemini-key") as HTMLInputElement;
-                        if (input && input.value.trim()) {
-                          setLocalApiKey(input.value.trim());
-                          setError(null);
-                          startExtraction();
-                        }
-                      }}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer shrink-0"
-                    >
-                      Guardar y Analizar
-                    </button>
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] text-slate-500">
-                    <a 
-                      href="https://aistudio.google.com/" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-indigo-400 hover:underline font-semibold flex items-center"
-                    >
-                      <span>Obtener clave API gratuita en Google AI Studio ↗</span>
-                    </a>
-                    <button 
-                      type="button"
-                      onClick={() => setError("No es posible procesar documentos sin clave de API en un entorno estático.")} 
-                      className="hover:text-slate-400 underline text-slate-500"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : error && (
+            {error && (
               <div className="bg-red-900/20 border border-red-500/40 rounded-xl p-4 text-sm text-red-300 flex items-start space-x-2">
                 <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                 <span>{error}</span>

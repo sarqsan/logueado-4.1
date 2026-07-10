@@ -340,11 +340,7 @@ D./Dña. ${landlordName || "..."}                  D./Dña. ${tenantName || "...
       }
     } catch (error: any) {
       console.error(error);
-      if (error.message === "API_KEY_REQUIRED") {
-        setShowKeyConfig(true);
-      } else {
-        alert(`Error de IA: ${error.message}. Se mantendrá la plantilla legal estándar local.`);
-      }
+      alert(`Error de IA: ${error.message}. Se mantendrá la plantilla legal estándar local.`);
     } finally {
       setIsGenerating(false);
     }
@@ -805,46 +801,6 @@ D./Dña. ${landlordName || "..."}                  D./Dña. ${tenantName || "...
                 placeholder="E.g., Quiero incluir una cláusula que obligue a contratar un seguro de impago a costa del inquilino y regular la fianza con aval bancario..."
               />
             </div>
-            {showKeyConfig && (
-              <div className="bg-indigo-950/40 border border-indigo-500/40 rounded-2xl p-4 text-left space-y-3 animate-slide-in">
-                <div className="flex items-start space-x-2 text-xs">
-                  <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5 animate-pulse" />
-                  <div>
-                    <h4 className="font-bold text-white">Clave API de Gemini Requerida</h4>
-                    <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
-                      Estás en GitHub Pages. Para redactar contratos con la IA de Gemini directamente en tu navegador, introduce tu clave API:
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="password"
-                    placeholder="Clave API de Gemini..."
-                    id="contract-gemini-key"
-                    defaultValue={getLocalApiKey() || ""}
-                    className="flex-1 bg-slate-900 border border-slate-700/60 rounded-lg px-2.5 py-1 text-[11px] text-white font-mono focus:outline-none focus:border-indigo-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const val = (document.getElementById("contract-gemini-key") as HTMLInputElement)?.value;
-                      if (val) {
-                        setLocalApiKey(val);
-                        setShowKeyConfig(false);
-                        handleOptimizeWithAI();
-                      }
-                    }}
-                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-semibold shrink-0 cursor-pointer"
-                  >
-                    Guardar
-                  </button>
-                </div>
-                <div className="flex justify-between text-[10px] text-slate-500 pt-0.5">
-                  <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">Obtener clave gratis ↗</a>
-                  <button type="button" onClick={() => setShowKeyConfig(false)} className="underline">Cancelar</button>
-                </div>
-              </div>
-            )}
 
             <button
               type="button"

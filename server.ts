@@ -36,9 +36,9 @@ function getGeminiClient(): GoogleGenAI {
 async function generateContentWithRetry(
   contents: any[],
   config: any,
-  initialModel: string = "gemini-2.5-flash"
+  initialModel: string = "gemini-3.5-flash"
 ): Promise<any> {
-  const modelsToTry = [initialModel, "gemini-2.5-flash"];
+  const modelsToTry = [initialModel, "gemini-3.5-flash"];
   let lastError: any = null;
 
   for (const modelName of modelsToTry) {
@@ -251,7 +251,7 @@ REGLAS DE EXTRACCIÓN SENSATAS:
             required: ["user1", "user2", "properties"]
           }
         },
-        "gemini-2.5-flash"
+        "gemini-3.5-flash"
       );
 
       const textOutput = response.text;
@@ -320,7 +320,7 @@ Devuelve los importes como números decimales y las fechas en formato YYYY-MM-DD
             required: ["amount", "date", "description", "category"]
           }
         },
-        "gemini-2.5-flash"
+        "gemini-3.5-flash"
       );
 
       const textOutput = response.text;
@@ -352,7 +352,7 @@ Devuelve los importes como números decimales y las fechas en formato YYYY-MM-DD
         {
           responseMimeType: "text/plain",
         },
-        "gemini-2.5-flash"
+        "gemini-3.5-flash"
       );
 
       const contractText = response.text;

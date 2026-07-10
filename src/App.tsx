@@ -57,6 +57,9 @@ export default function App() {
 
   // Load initial session and users list
   useEffect(() => {
+    // Clear any previous client-side Gemini API keys to ensure we use the secure backend proxy
+    localStorage.removeItem("rentasync_gemini_api_key");
+    
     const usersStr = localStorage.getItem("rentasync_users");
     const sessionStr = localStorage.getItem("rentasync_session");
     

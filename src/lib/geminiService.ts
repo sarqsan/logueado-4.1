@@ -59,12 +59,12 @@ export async function extractDocuments(payload: {
 }): Promise<any> {
   const localKey = getLocalApiKey();
 
-  // If NOT on static deploy and NO custom local key, always prefer standard backend
-  if (!isStaticDeployment() && !localKey) {
+  // If NOT on static deploy, always prefer standard backend
+  if (!isStaticDeployment()) {
     return await fetchFromBackend("/api/extract", payload);
   }
 
-  // If we have a local key or we are on static hosting, use client-side Gemini!
+  // If we have a local key or we are on static hosting and have a custom key, use client-side Gemini!
   try {
     const ai = getClientSideGemini();
     const systemPrompt = `Eres un experto fiscal de la Agencia Tributaria Española (AEAT).
@@ -230,7 +230,8 @@ export async function extractInvoice(payload: {
 }): Promise<any> {
   const localKey = getLocalApiKey();
 
-  if (!isStaticDeployment() && !localKey) {
+  // If NOT on static deploy, always prefer standard backend
+  if (!isStaticDeployment()) {
     return await fetchFromBackend("/api/extract-invoice", payload);
   }
 
@@ -300,7 +301,8 @@ export async function optimizeContract(payload: {
 }): Promise<any> {
   const localKey = getLocalApiKey();
 
-  if (!isStaticDeployment() && !localKey) {
+  // If NOT on static deploy, always prefer standard backend
+  if (!isStaticDeployment()) {
     return await fetchFromBackend("/api/optimize-contract", payload);
   }
 
