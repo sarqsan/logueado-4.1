@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { AppState, Property, PropertyExpense, getThemeColors } from "../types";
+import { getApiUrl } from "../lib/firebase";
 import { 
   Building, 
   Briefcase, 
@@ -215,7 +216,7 @@ export default function Dashboard({
 
           setScanStatusMsg("Enviando a la red neuronal de Gemini 3.5 Flash...");
           
-          const response = await fetch("/api/extract-invoice", {
+          const response = await fetch(getApiUrl("/api/extract-invoice"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ fileData: rawBase64, mimeType })
@@ -767,7 +768,7 @@ ${user2.hasPartner ? `Cónyuge: ${user2.name || "Usuario 2"} - DNI: ${user2.dni 
                             bodyPayload.text1 = yearPastedText;
                           }
 
-                          const response = await fetch("/api/extract", {
+                          const response = await fetch(getApiUrl("/api/extract"), {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(bodyPayload),
