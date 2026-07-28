@@ -32,22 +32,18 @@ import {
 const MONTHS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
 export default function App() {
-  const [state, setState] = useState<AppState>({
-    user1: { name: "", dni: "", brutoTrabajo: 0, netoTrabajo: 0 },
-    user2: { name: "", dni: "", brutoTrabajo: 0, netoTrabajo: 0, hasPartner: false },
-    properties: [],
-    payments: [],
-    expenses: [],
-    syncEvents: [],
-    syncEnabled: true,
-    isOnboarded: false,
-    isAuthenticated: false,
-    currentUser: "",
-    registeredUsers: {},
-    currentYear: 2026,
-    yearlyProfiles: {},
-    theme: "slate-indigo"
-  });
+  return (
+    <div
+      style={{
+        padding: "40px",
+        fontSize: "30px",
+        fontFamily: "Arial"
+      }}
+    >
+      🎉 Render funciona correctamente
+    </div>
+  );
+}
 
   const themeColors = getThemeColors(state.theme);
 
