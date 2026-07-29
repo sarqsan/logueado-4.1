@@ -6,7 +6,7 @@ import {defineConfig} from 'vite';
 export default defineConfig(({ command, mode }) => {
   const isProd = mode === 'production' || command === 'build';
   return {
-    base: isProd ? '/logueado-4.1/' : '/',
+    base: '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
